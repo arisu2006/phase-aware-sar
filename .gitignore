@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data (large / raw SAR data should not be committed)
+data/*
+!data/.gitkeep
+*.tif
+*.tiff
+*.h5
+*.npy
+*.npz
+
+# W&B
+wandb/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Env
+.env
