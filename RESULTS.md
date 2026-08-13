@@ -1,24 +1,5 @@
-\# PhaseSAR-Net — Results Log
-
-
-
-\## 10 Aug 2026 (Day 1)
-
-\- Studied SAR fundamentals: optical vs. SAR, all-weather capability, I/Q data, imaging geometry
-
-\- Created GitHub repo `phase-aware-sar` with base structure
-
-\- Wrote SAR primer (docs/sar\_primer.md)
-
-
-
-\## 11 Aug 2026 (Day 2)
-
-\- Finalized and committed SAR primer
-
-\- Set up W\&B tracking project `phase-aware-sar` (verified: day2-setup-check run logged)
-
-\- Repo scaffold validated and pushed
-
-\- Status: Deliverable complete ✅
-
+## Aug 13, 2026
+- Read + summarized 2 papers on phase-aware/complex-valued SAR classification
+- Refined problem statement
+- Files: notes/paper1_complex_cnn_summary.md, notes/paper2_mstar_benchmark_summary.md, notes/problem_statement.md
+-
