@@ -1,64 +1,26 @@
-# SAR Primer — Day 1 Notes
+# SAR Primer
 
-**Project:** PhaseSAR-Net — Phase-Aware SAR Intelligence for Robust Scene Classification
-**Date:** 10 Aug 2026
-**Author:** Gourav
+## 1. What SAR Is, and How It Differs From Optical Imaging
+Synthetic Aperture Radar (SAR) is an active imaging system: it transmits its own microwave pulses toward the ground and builds an image from the echoes that bounce back, rather than passively recording reflected sunlight like an optical camera. Because it supplies its own illumination, SAR does not depend on the sun and is unaffected by cloud cover, haze, or smoke.
 
-## What SAR is, and how it differs from optical imaging
+A SAR platform has a physically small antenna, which would normally give poor angular resolution. SAR overcomes this by exploiting platform motion: as it flies along its track, it takes many measurements of the same ground patch from different positions and combines them coherently (using amplitude AND phase) to synthesize a much larger "virtual" antenna — hence "synthetic aperture."
 
-Synthetic Aperture Radar (SAR) is an active imaging system: it transmits its own microwave
-pulses and images by measuring what bounces back, rather than passively capturing reflected
-sunlight like an optical camera. Because it supplies its own illumination and works at
-microwave wavelengths (typically 1 cm – 1 m), it can image through cloud cover, smoke, and
-darkness — conditions that make optical sensors useless.
+SAR images record radar backscatter (surface roughness, dielectric properties, geometry), not reflected color like optical sensors. A metal object or wet rough surface can appear bright in SAR while looking unremarkable optically; smooth surfaces (water, asphalt) appear dark due to specular reflection.
 
-"Synthetic aperture" refers to how the platform (usually a satellite or aircraft) synthesizes
-a very large virtual antenna by combining radar echoes collected as it moves along its flight
-path. This gives SAR far finer spatial resolution than a physically small real antenna could
-achieve on its own.
+## 2. All-Weather, Day-Night Capability
+Because SAR is active and uses microwave wavelengths, it works identically at night and through most weather conditions. This is the primary operational reason SAR is favored for defense and disaster-monitoring — optical/infrared sensors are often blind under cloud cover or at night.
 
-## All-weather, day-night capability
+## 3. Amplitude vs. Complex-Valued (I/Q) Data
+Raw SAR data at each pixel is a complex number: I/Q components, or equivalently amplitude and phase (z = I + jQ = A·e^(jφ)).
 
-Because SAR doesn't depend on sunlight or clear skies, it can acquire imagery on a fixed
-revisit schedule regardless of weather or time of day. This is the core reason SAR is used
-for defense, disaster response, and maritime monitoring — domains where optical imagery might
-simply be unavailable when it's needed most.
+- **Amplitude-only (magnitude):** captures backscatter strength; most public datasets (e.g. MSTAR chips) are distributed this way. Phase is lost.
+- **Complex-valued (I/Q):** captures both strength and phase — full raw information.
 
-## Amplitude vs. complex-valued (I/Q) data
+Phase encodes sub-wavelength path-length differences (enabling interferometry) and fine scattering-mechanism detail — this is the core motivation for a phase-aware/complex-valued model.
 
-Every SAR pixel is measured as a complex number, typically stored as **I** (in-phase) and
-**Q** (quadrature) components, or equivalently as amplitude and phase:
-
-- **Amplitude** (magnitude of the complex value) reflects how strongly a surface backscatters
-  the radar signal — this is what conventional SAR classifiers (and most public datasets)
-  use, since it can be rendered as a grayscale image similar to an optical photo.
-- **Phase** encodes the precise timing/path-length of the return signal. It's usually
-  discarded in amplitude-only pipelines, but it carries information about surface structure,
-  sub-pixel displacement, and coherence that amplitude alone loses.
-
-**This distinction is the central hypothesis of PhaseSAR-Net**: standard SAR scene
-classifiers that only use amplitude may be discarding phase information that could make
-classification more robust to noise/corruption — this project tests whether a phase-aware
-(complex-valued) model is measurably more robust than an amplitude-only baseline.
-
-## Basic radar imaging geometry
-
-- The radar looks **sideways** (side-looking geometry), not straight down, to avoid the
-  left-right ambiguity that would occur with a nadir-pointing beam.
-- **Range** is the across-track direction (distance from sensor to target); **azimuth** is the
-  along-track (flight direction).
-- **Incidence angle** (angle between the radar beam and vertical) affects backscatter
-  strength and causes geometric distortions specific to SAR: **foreshortening** (slopes facing
-  the radar appear compressed), **layover** (tall objects appear to lean toward the sensor),
-  and **shadow** (areas blocked from the beam show no return).
-- **Speckle** is a grainy, multiplicative noise pattern inherent to coherent imaging systems
-  like SAR — distinct from the additive noise typical in optical sensors, and a key
-  corruption type this project may need to simulate/test against.
-
-## Why this matters for the project
-
-PhaseSAR-Net is framed as **AI reliability / robustness research**: does model compression or
-input corruption break phase-aware SAR classification more or less than it breaks a standard
-amplitude-only baseline? Today's primer establishes the minimum domain vocabulary
-(amplitude/phase, geometry, speckle) needed to read papers and design experiments for the
-rest of Phase 1.
+## 4. Basic Radar Imaging Geometry
+- **Side-looking geometry:** SAR looks obliquely, not straight down, to resolve range ambiguity.
+- **Range direction:** across-track; resolution comes from pulse bandwidth.
+- **Azimuth direction:** along-track; resolution comes from the synthetic aperture.
+- **Depression/incidence angle:** affects shadowing, layover, foreshortening.
+- **Layover & shadow:** tall objects can lean toward the sensor (layover); areas behind them go radar-dark (shadow).
