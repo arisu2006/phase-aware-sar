@@ -15,3 +15,4 @@
 - Scaffolded src/complex_layers.py (ComplexConv2d, ModReLU) — verified import works
 - MSTAR access still pending; continuing on FUSAR-Ship backup sample
 2026-08-19: Reviewed and finalized scope.md, confirmed v0.1-scope-locked release is live.
+- 23-Aug-2026: Validated src/data/loader.py on 5 sample MSTAR chips without errors.
