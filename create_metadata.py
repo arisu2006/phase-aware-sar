@@ -1,9 +1,11 @@
 import os
 import glob
-import re
 import pandas as pd
 
-all_files = [f for f in glob.glob("data/raw/**/*", recursive=True) if os.path.isfile(f) and not f.endswith(".gitkeep")]
+all_files = [
+    f for f in glob.glob("data/raw/**/*", recursive=True) 
+    if os.path.isfile(f) and not f.endswith((".zip", ".gitkeep", ".txt", ".md"))
+]
 
 records = []
 for path in all_files:
@@ -12,11 +14,11 @@ for path in all_files:
     # Determine angle
     angle = 17 if "17" in path_norm else 15
 
-    # Extract class name from folder hierarchy
+    # Extract class name from directory structure
     parts = path_norm.split("/")
     cls = parts[-2] if len(parts) > 2 else "unknown"
 
-    # Extract serial / filename stem
+    # Target serial / filename stem
     serial = os.path.splitext(os.path.basename(path_norm))[0]
 
     records.append({
@@ -29,4 +31,4 @@ for path in all_files:
 os.makedirs("data", exist_ok=True)
 df = pd.DataFrame(records)
 df.to_csv("data/metadata.csv", index=False)
-print(f"Updated metadata.csv with {len(df)} records.")
+print(f"Cleaned and updated metadata.csv with {len(df)} records.")
