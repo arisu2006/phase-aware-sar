@@ -16,3 +16,5 @@
 - MSTAR access still pending; continuing on FUSAR-Ship backup sample
 2026-08-19: Reviewed and finalized scope.md, confirmed v0.1-scope-locked release is live.
 - 23-Aug-2026: Validated src/data/loader.py on 5 sample MSTAR chips without errors.
+- 25-Aug-2026: Validated SOC-protocol splits.
+  - Overlap / Leakage: None (set())
