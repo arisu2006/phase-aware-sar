@@ -4,8 +4,6 @@ import pandas as pd
 from src.data.loader import load_mstar_chip
 
 metadata_df = pd.read_csv("data/metadata.csv")
-
-# Support either 'filepath' or 'file_path' column names
 file_col = "file_path" if "file_path" in metadata_df.columns else "filepath"
 
 # 1. Class balance
@@ -44,7 +42,8 @@ for i, cls in enumerate(sample_classes):
     axes[0, i].set_title(f"{cls} - Mag")
     axes[0, i].axis("off")
 
-    axes[1, i].imshow(chip["phase"], cmap="twilight")
+    phase_map = chip.get("phase", np.zeros_like(chip["magnitude"]))
+    axes[1, i].imshow(phase_map, cmap="twilight")
     axes[1, i].set_title(f"{cls} - Phase")
     axes[1, i].axis("off")
 
