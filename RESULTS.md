@@ -18,3 +18,4 @@
 - 23-Aug-2026: Validated src/data/loader.py on 5 sample MSTAR chips without errors.
 - 25-Aug-2026: Validated SOC-protocol splits.
   - Overlap / Leakage: None (set())
+- Day 2: Validated normalize.py against edge cases; generated before/after histogram comparison (using synthetic chips pending real MSTAR data).
