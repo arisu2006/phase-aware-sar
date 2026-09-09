@@ -18,4 +18,5 @@
 - 23-Aug-2026: Validated src/data/loader.py on 5 sample MSTAR chips without errors.
 - 25-Aug-2026: Validated SOC-protocol splits.
   - Overlap / Leakage: None (set())
-- Day 2: Validated normalize.py against edge cases; generated before/after histogram comparison (using synthetic chips pending real MSTAR data).
+- Day 2: Validated normalize.py against edge cases; generated before/after histogram comparison (using synthetic chips pending real MSTAR data).- **03-Sep-2026**: Validated dual-representation module (src/preprocess/representation.py) with 3-ch AP and 2-ch RI views on 3 chips. 
+- **03-Sep-2026**: Validated dual-representation module (src/preprocess/representation.py) with 3-ch AP and 2-ch RI views on 3 chips. 
