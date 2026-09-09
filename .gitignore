@@ -10,6 +10,9 @@ venv/
 
 # Data (large / raw SAR data should not be committed)
 data/*
+!data/**/
+!data/**/*.md
+!data/**/*.gitkeep
 !data/.gitkeep
 *.tif
 *.tiff

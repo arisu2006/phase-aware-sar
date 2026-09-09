@@ -20,3 +20,4 @@
   - Overlap / Leakage: None (set())
 - Day 2: Validated normalize.py against edge cases; generated before/after histogram comparison (using synthetic chips pending real MSTAR data).- **03-Sep-2026**: Validated dual-representation module (src/preprocess/representation.py) with 3-ch AP and 2-ch RI views on 3 chips. 
 - **03-Sep-2026**: Validated dual-representation module (src/preprocess/representation.py) with 3-ch AP and 2-ch RI views on 3 chips. 
+- **06-Sep-2026**: Phase 3 preprocessing completed. Full pipeline (load -> crop -> normalize -> dual representation -> DataLoader) documented and frozen under tag `v0.3-preprocessing-complete`. 

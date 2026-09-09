@@ -1,32 +1,22 @@
-\# Data Pipeline Documentation
+# Data Pipeline and Regeneration Guide
 
+## Overview
+This directory manages raw MSTAR complex radar chips and their transformation pipeline.
 
+## Regeneration Steps
+1. Place raw MSTAR files into `data/raw/`.
+2. Run metadata extraction:
+   ```bash
+   python create_metadata.py
+   ```
+3. The PyTorch data pipeline (`src/data/sar_dataset.py`) chains:
+   - **Raw Loading**: `src.data.loader.load_mstar_chip`
+   - **Cropping**: `src.preprocess.resize.center_crop_resize` (Target: 128x128)
+   - **Representation & Normalization**: `src.preprocess.representation.get_representation`
+     - `ap`: 3-channel [Normalized Amplitude, Phase Sin, Phase Cos]
+     - `ri`: 2-channel [Normalized Real, Normalized Imaginary]
 
-This document describes the end-to-end pipeline for loading, splitting, and inspecting the MSTAR radar dataset.
-
-
-
-\## Pipeline Architecture
-
-`Raw MSTAR files` → `src/data/loader.py` (parsing) → `src/data/splits.py` (SOC split) → `notebooks/01\_eda.py` (inspection)
-
-
-
-\---
-
-
-
-\## 1. Loader (`src/data/loader.py`)
-
-\- Reads raw SAR image files into magnitude and phase arrays.
-
-\- Normalizes dimensions and returns numerical numpy representations.
-
-
-
-\*\*Validation Command:\*\*
-
-```bash
-
-python -m notebooks.validate\_loader
-
+## Expected Output Structure
+- Output batch shape (`ap` mode): `[B, 3, 128, 128]`
+- Output batch shape (`ri` mode): `[B, 2, 128, 128]`
+- Tensor dtype: `torch.float32`
