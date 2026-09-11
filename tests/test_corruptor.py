@@ -7,3 +7,9 @@ def test_apply_shapes_preserved():
     out = lib.apply(chip)
     assert out.shape == chip.shape
     assert out.dtype == np.complex64
+def test_all_corruption_types_run():
+    chip = (np.random.randn(64, 64) + 1j * np.random.randn(64, 64)).astype(np.complex64)
+    lib = SARCorruptionLibrary(severity="severe")
+    for name, fn in lib.corruption_fns.items():
+        out = fn(chip)
+        assert out.shape == chip.shape, f"{name} changed shape"
