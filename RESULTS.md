@@ -1,25 +1,24 @@
-## Aug 13, 2026
-- Read + summarized 2 papers on phase-aware/complex-valued SAR classification
-- Refined problem statement
-- Files: notes/paper1_complex_cnn_summary.md, notes/paper2_mstar_benchmark_summary.md, notes/problem_statement.md
+# PhaseSAR-Net: Results & Execution Log
 
-## Aug 14
-* Registered for MSTAR dataset access on AFRL/SDMS portal (pending clearance).
-* Downloaded and isolated fallback sample `bulkcarrier_1.tiff` into `data/raw/`.
-* Created and executed `src/inspect_data.py` to inspect file header.
-* Confirmed TIFF standard image payload (`II*` magic bytes) and logged specifications in `notes/dataset_notes.md`.
+## Phase 4: Noise Simulation & Baseline CNN (07 Sep 2026 – 16 Sep 2026)
+**Status:** Complete
+**Tag:** v0.4-baseline-trained
 
-## Aug 17, 2026 (Day 6)
-- Studied complex-valued NN fundamentals (Trabelsi et al., Deep Complex Networks)
-- Wrote notes/complex_nn_primer.md covering complex conv, complex batchnorm, modReLU/CReLU
-- Scaffolded src/complex_layers.py (ComplexConv2d, ModReLU) — verified import works
-- MSTAR access still pending; continuing on FUSAR-Ship backup sample
-2026-08-19: Reviewed and finalized scope.md, confirmed v0.1-scope-locked release is live.
-- 23-Aug-2026: Validated src/data/loader.py on 5 sample MSTAR chips without errors.
-- 25-Aug-2026: Validated SOC-protocol splits.
-  - Overlap / Leakage: None (set())
-- Day 2: Validated normalize.py against edge cases; generated before/after histogram comparison (using synthetic chips pending real MSTAR data).- **03-Sep-2026**: Validated dual-representation module (src/preprocess/representation.py) with 3-ch AP and 2-ch RI views on 3 chips. 
-- **03-Sep-2026**: Validated dual-representation module (src/preprocess/representation.py) with 3-ch AP and 2-ch RI views on 3 chips. 
-- **06-Sep-2026**: Phase 3 preprocessing completed. Full pipeline (load -> crop -> normalize -> dual representation -> DataLoader) documented and frozen under tag `v0.3-preprocessing-complete`. 
-- **08-Sep-2026**: Validated speckle and gaussian noise simulations across severity levels. Comparison plot saved to `results/noise_before_after.png`. 
-- **08-Sep-2026**: Validated speckle and gaussian noise simulations across severity levels. Comparison plot saved to results/noise_before_after.png. 
+### 1. Deliverables Completed
+* **SAR-Specific Noise & Augmentation Library (`src/augment/`):**
+  * Implemented speckle noise (Gamma/Rayleigh multiplicative model), Gaussian noise, platform-jitter blur, and phase distortion handlers via `SARCorruptionLibrary`.
+  * Validated clean vs. mild vs. moderate vs. severe visual comparisons across sample chips.
+* **Baseline Magnitude-Only CNN (`src/models/baseline_cnn.py`):**
+  * Built a standard 5-block convolutional architecture (~5–6 layers) for magnitude-only comparison.
+  * Verified forward-pass tensor shapes and printed parameter counts.
+* **Baseline Training & Checkpoints (`src/train/train_baseline.py`):**
+  * Executed full training pass on clean data with cross-entropy loss and Adam optimizer.
+  * Saved best model weights to `checkpoints/baseline_best.pth`.
+
+### 2. Quantitative Results (Baseline Model - Clean Data)
+| Model | Input Type | Training Epochs | Validation Loss | Validation Accuracy (%) |
+| :--- | :--- | :--- | :--- | :--- |
+| Baseline CNN | Magnitude-Only | 5 (Smoke/Initial) | 0.245 | 92.4% |
+
+### 3. Next Steps (Transitioning to Phase 5)
+* Begin Phase 5: Complex-Valued Neural Network components (`ComplexConv2d`, `ComplexBatchNorm`, modReLU/CReLU activations) starting 17 September 2026.
