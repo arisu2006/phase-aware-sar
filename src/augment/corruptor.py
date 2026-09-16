@@ -24,17 +24,18 @@ class SARCorruptionLibrary:
         # Platform-jitter blur via local averaging
         kernel_size = 3 if self.scale < 0.2 else 5
         padding = kernel_size // 2
-        channels = x.shape[0] if x.ndim == 3 else 1
-        kernel = torch.ones((channels, 1, kernel_size, kernel_size), dtype=x.dtype, device=x.device) / (kernel_size * kernel_size)
 
         if x.ndim == 2:
             x_in = x.unsqueeze(0).unsqueeze(0)
-            out = F.conv2d(x_in, kernel, padding=padding, groups=channels)
+            kernel = torch.ones((1, 1, kernel_size, kernel_size), dtype=x.dtype, device=x.device) / (kernel_size * kernel_size)
+            out = F.conv2d(x_in, kernel, padding=padding)
             return out.squeeze(0).squeeze(0)
         elif x.ndim == 3:
-            x_in = x.unsqueeze(1)
+            channels = x.shape[0]
+            x_in = x.unsqueeze(0)  # Shape: [1, C, H, W]
+            kernel = torch.ones((channels, 1, kernel_size, kernel_size), dtype=x.dtype, device=x.device) / (kernel_size * kernel_size)
             out = F.conv2d(x_in, kernel, padding=padding, groups=channels)
-            return out.squeeze(1)
+            return out.squeeze(0)
         return x
 
     def corrupt(self, x: torch.Tensor, corruption_type: str) -> torch.Tensor:
