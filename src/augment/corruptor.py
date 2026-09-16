@@ -1,122 +1,48 @@
-# src/augment/corruptor.py
-"""
-SAR Corruption Library
-Composes 1–2 random corruptions with configurable severity.
-"""
-
-from __future__ import annotations
-import random
-from typing import List, Tuple, Optional, Dict, Any
-import numpy as np
 import torch
-
-# Import the individual corruption functions you already wrote
-from src.augment.speckle_noise import add_speckle_noise
-from src.augment.gaussian_noise import add_gaussian_noise
-from src.augment.blur import apply_blur
-from src.augment.phase_distortion import apply_phase_distortion
-
+import torch.nn.functional as F
 
 class SARCorruptionLibrary:
-    """
-    Applies a random composition of 1–2 SAR-specific corruptions.
-    Severity controls the strength of each corruption.
-    """
-
-    AVAILABLE = ["speckle", "gaussian", "blur", "phase"]
-
-    def __init__(
-        self,
-        severity: str = "mild",          # "mild" | "moderate" | "severe"
-        max_corruptions: int = 2,
-        seed: Optional[int] = None,
-    ):
-        assert severity in {"mild", "moderate", "severe"}
+    def __init__(self, severity: str = "moderate"):
         self.severity = severity
-        self.max_corruptions = max_corruptions
-        self.rng = random.Random(seed)
+        self.severity_scales = {
+            "mild": 0.1,
+            "moderate": 0.3,
+            "severe": 0.5
+        }
+        self.scale = self.severity_scales.get(severity, 0.3)
 
-        # Severity → strength parameters
-        self.params = {
-            "mild": {
-                "speckle": {"looks": 8},
-                "gaussian": {"std": 0.05},
-                "blur": {"kernel_size": 3, "sigma": 0.8},
-                "phase": {"std": 0.15},          # radians
-            },
-            "moderate": {
-                "speckle": {"looks": 4},
-                "gaussian": {"std": 0.12},
-                "blur": {"kernel_size": 5, "sigma": 1.2},
-                "phase": {"std": 0.35},
-            },
-            "severe": {
-                "speckle": {"looks": 2},
-                "gaussian": {"std": 0.25},
-                "blur": {"kernel_size": 7, "sigma": 2.0},
-                "phase": {"std": 0.70},
-            },
-        }[severity]
+    def add_speckle_noise(self, x: torch.Tensor) -> torch.Tensor:
+        # Multiplicative Gamma/Rayleigh-like speckle noise for SAR
+        noise = torch.randn_like(x) * self.scale
+        return x * (1.0 + noise)
 
-    def __call__(
-        self,
-        chip: np.ndarray | torch.Tensor,
-        forced: Optional[List[str]] = None,
-    ) -> Tuple[np.ndarray | torch.Tensor, List[str]]:
-        """
-        Parameters
-        ----------
-        chip : complex or real array / tensor
-        forced : if provided, apply exactly these corruptions (for testing)
+    def add_gaussian_noise(self, x: torch.Tensor) -> torch.Tensor:
+        noise = torch.randn_like(x) * self.scale
+        return x + noise
 
-        Returns
-        -------
-        corrupted_chip, list_of_applied_corruptions
-        """
-        if forced is not None:
-            chosen = forced
+    def apply_blur(self, x: torch.Tensor) -> torch.Tensor:
+        # Platform-jitter blur via local averaging
+        kernel_size = 3 if self.scale < 0.2 else 5
+        padding = kernel_size // 2
+        channels = x.shape[0] if x.ndim == 3 else 1
+        kernel = torch.ones((channels, 1, kernel_size, kernel_size), dtype=x.dtype, device=x.device) / (kernel_size * kernel_size)
+
+        if x.ndim == 2:
+            x_in = x.unsqueeze(0).unsqueeze(0)
+            out = F.conv2d(x_in, kernel, padding=padding, groups=channels)
+            return out.squeeze(0).squeeze(0)
+        elif x.ndim == 3:
+            x_in = x.unsqueeze(1)
+            out = F.conv2d(x_in, kernel, padding=padding, groups=channels)
+            return out.squeeze(1)
+        return x
+
+    def corrupt(self, x: torch.Tensor, corruption_type: str) -> torch.Tensor:
+        if corruption_type == "speckle":
+            return self.add_speckle_noise(x)
+        elif corruption_type == "gaussian":
+            return self.add_gaussian_noise(x)
+        elif corruption_type == "blur":
+            return self.apply_blur(x)
         else:
-            k = self.rng.randint(1, self.max_corruptions)
-            chosen = self.rng.sample(self.AVAILABLE, k=k)
-
-        out = chip
-        applied = []
-
-        for name in chosen:
-            if name == "speckle":
-                out = add_speckle_noise(out, **self.params["speckle"])
-            elif name == "gaussian":
-                out = add_gaussian_noise(out, **self.params["gaussian"])
-            elif name == "blur":
-                out = apply_blur(out, **self.params["blur"])
-            elif name == "phase":
-                out = apply_phase_distortion(out, **self.params["phase"])
-            applied.append(name)
-
-        return out, applied
-
-
-# ------------------------------------------------------------------
-# Quick unit-test helper (run this once)
-# ------------------------------------------------------------------
-def _unit_test():
-    print("Running SARCorruptionLibrary unit tests...")
-    # Fake complex chip (H, W)
-    chip = (np.random.randn(64, 64) + 1j * np.random.randn(64, 64)).astype(np.complex64)
-
-    lib = SARCorruptionLibrary(severity="mild", seed=42)
-    corrupted, applied = lib(chip)
-    assert corrupted.shape == chip.shape
-    assert len(applied) >= 1
-    print(f"  mild OK → applied {applied}")
-
-    lib = SARCorruptionLibrary(severity="severe", seed=123)
-    corrupted, applied = lib(chip, forced=["speckle", "phase"])
-    assert "speckle" in applied and "phase" in applied
-    print(f"  severe + forced OK → applied {applied}")
-
-    print("All unit tests passed.")
-
-
-if __name__ == "__main__":
-    _unit_test()
+            raise ValueError(f"Unknown corruption type: {corruption_type}")

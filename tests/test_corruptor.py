@@ -1,15 +1,14 @@
-import numpy as np
+import torch
 from src.augment.corruptor import SARCorruptionLibrary
 
-def test_apply_shapes_preserved():
-    chip = (np.random.randn(64, 64) + 1j * np.random.randn(64, 64)).astype(np.complex64)
-    lib = SARCorruptionLibrary(severity="mild")
-    out = lib.apply(chip)
-    assert out.shape == chip.shape
-    assert out.dtype == np.complex64
-def test_all_corruption_types_run():
-    chip = (np.random.randn(64, 64) + 1j * np.random.randn(64, 64)).astype(np.complex64)
-    lib = SARCorruptionLibrary(severity="severe")
-    for name, fn in lib.corruption_fns.items():
-        out = fn(chip)
-        assert out.shape == chip.shape, f"{name} changed shape"
+def test_corruptor():
+    corruptor = SARCorruptionLibrary(severity="moderate")
+    dummy_tensor = torch.randn(2, 64, 64)
+
+    for c_type in ["speckle", "gaussian", "blur"]:
+        out = corruptor.corrupt(dummy_tensor, c_type)
+        assert out.shape == dummy_tensor.shape, f"Shape mismatch for {c_type}"
+    print("All corruption unit tests passed.")
+
+if __name__ == "__main__":
+    test_corruptor()
