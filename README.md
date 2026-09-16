@@ -21,7 +21,6 @@
 
 **PhaseSAR-Net** teaches an AI to use the **full** radar signal — brightness *and* phase — so it still recognizes things correctly even when the image gets noisy, blurry, or squished. It's like giving the AI night-vision on top of a normal photo, instead of just the normal photo.
 
-> **Question this project answers:** Does using the full signal actually help the AI stay accurate when the data gets messy — more than the usual "brightness-only" method does?
 
 ---
 
