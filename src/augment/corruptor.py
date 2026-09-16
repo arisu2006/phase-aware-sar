@@ -1,119 +1,122 @@
+# src/augment/corruptor.py
 """
-src/augment/corruptor.py
-
-SARCorruptionLibrary: applies clean / mild / severe corruption presets
-to SAR chip images (noise + blur + composed corruptions).
-
-Run this file directly to execute the built-in unit tests:
-    python src/augment/corruptor.py
+SAR Corruption Library
+Composes 1–2 random corruptions with configurable severity.
 """
 
+from __future__ import annotations
+import random
+from typing import List, Tuple, Optional, Dict, Any
 import numpy as np
+import torch
+
+# Import the individual corruption functions you already wrote
+from src.augment.speckle_noise import add_speckle_noise
+from src.augment.gaussian_noise import add_gaussian_noise
+from src.augment.blur import apply_blur
+from src.augment.phase_distortion import apply_phase_distortion
 
 
 class SARCorruptionLibrary:
     """
-    Bundles the individual corruption functions (noise, blur, composition)
-    into named severity presets: 'clean', 'mild', 'severe'.
+    Applies a random composition of 1–2 SAR-specific corruptions.
+    Severity controls the strength of each corruption.
     """
 
-    def __init__(self, seed: int = 42):
-        self.rng = np.random.default_rng(seed)
+    AVAILABLE = ["speckle", "gaussian", "blur", "phase"]
 
-    # ---- individual corruption primitives ----
+    def __init__(
+        self,
+        severity: str = "mild",          # "mild" | "moderate" | "severe"
+        max_corruptions: int = 2,
+        seed: Optional[int] = None,
+    ):
+        assert severity in {"mild", "moderate", "severe"}
+        self.severity = severity
+        self.max_corruptions = max_corruptions
+        self.rng = random.Random(seed)
 
-    def add_speckle_noise(self, img: np.ndarray, level: float) -> np.ndarray:
-        """Multiplicative speckle noise, typical of SAR imagery.
-        Higher `level` => stronger, more visible distortion."""
-        noise = self.rng.standard_normal(size=img.shape)
-        return np.clip(img * (1.0 + level * noise), 0, 1)
+        # Severity → strength parameters
+        self.params = {
+            "mild": {
+                "speckle": {"looks": 8},
+                "gaussian": {"std": 0.05},
+                "blur": {"kernel_size": 3, "sigma": 0.8},
+                "phase": {"std": 0.15},          # radians
+            },
+            "moderate": {
+                "speckle": {"looks": 4},
+                "gaussian": {"std": 0.12},
+                "blur": {"kernel_size": 5, "sigma": 1.2},
+                "phase": {"std": 0.35},
+            },
+            "severe": {
+                "speckle": {"looks": 2},
+                "gaussian": {"std": 0.25},
+                "blur": {"kernel_size": 7, "sigma": 2.0},
+                "phase": {"std": 0.70},
+            },
+        }[severity]
 
-    def blur(self, img: np.ndarray, kernel_size: int) -> np.ndarray:
-        """Simple box blur to simulate resolution degradation."""
-        if kernel_size <= 1:
-            return img
-        pad = kernel_size // 2
-        padded = np.pad(img, pad, mode="reflect")
-        out = np.zeros_like(img)
-        for i in range(img.shape[0]):
-            for j in range(img.shape[1]):
-                out[i, j] = padded[i:i + kernel_size, j:j + kernel_size].mean()
-        return out
+    def __call__(
+        self,
+        chip: np.ndarray | torch.Tensor,
+        forced: Optional[List[str]] = None,
+    ) -> Tuple[np.ndarray | torch.Tensor, List[str]]:
+        """
+        Parameters
+        ----------
+        chip : complex or real array / tensor
+        forced : if provided, apply exactly these corruptions (for testing)
 
-    def compose(self, img: np.ndarray, ops: list) -> np.ndarray:
-        """Apply a list of (function, kwargs) pairs in sequence."""
-        result = img.copy()
-        for fn, kwargs in ops:
-            result = fn(result, **kwargs)
-        return result
-
-    # ---- named severity presets ----
-
-    def apply(self, img: np.ndarray, preset: str) -> np.ndarray:
-        if preset == "clean":
-            return img.copy()
-        elif preset == "mild":
-            return self.compose(img, [
-                (self.add_speckle_noise, {"level": 0.05}),
-                (self.blur, {"kernel_size": 2}),
-            ])
-        elif preset == "severe":
-            return self.compose(img, [
-                (self.add_speckle_noise, {"level": 0.25}),
-                (self.blur, {"kernel_size": 4}),
-            ])
+        Returns
+        -------
+        corrupted_chip, list_of_applied_corruptions
+        """
+        if forced is not None:
+            chosen = forced
         else:
-            raise ValueError(f"Unknown preset: {preset}")
+            k = self.rng.randint(1, self.max_corruptions)
+            chosen = self.rng.sample(self.AVAILABLE, k=k)
+
+        out = chip
+        applied = []
+
+        for name in chosen:
+            if name == "speckle":
+                out = add_speckle_noise(out, **self.params["speckle"])
+            elif name == "gaussian":
+                out = add_gaussian_noise(out, **self.params["gaussian"])
+            elif name == "blur":
+                out = apply_blur(out, **self.params["blur"])
+            elif name == "phase":
+                out = apply_phase_distortion(out, **self.params["phase"])
+            applied.append(name)
+
+        return out, applied
 
 
-# ---- unit tests ----
+# ------------------------------------------------------------------
+# Quick unit-test helper (run this once)
+# ------------------------------------------------------------------
+def _unit_test():
+    print("Running SARCorruptionLibrary unit tests...")
+    # Fake complex chip (H, W)
+    chip = (np.random.randn(64, 64) + 1j * np.random.randn(64, 64)).astype(np.complex64)
 
-def _make_test_image():
-    rng = np.random.default_rng(0)
-    return rng.uniform(0, 1, size=(32, 32))
+    lib = SARCorruptionLibrary(severity="mild", seed=42)
+    corrupted, applied = lib(chip)
+    assert corrupted.shape == chip.shape
+    assert len(applied) >= 1
+    print(f"  mild OK → applied {applied}")
 
+    lib = SARCorruptionLibrary(severity="severe", seed=123)
+    corrupted, applied = lib(chip, forced=["speckle", "phase"])
+    assert "speckle" in applied and "phase" in applied
+    print(f"  severe + forced OK → applied {applied}")
 
-def test_clean_is_unchanged():
-    lib = SARCorruptionLibrary()
-    img = _make_test_image()
-    out = lib.apply(img, "clean")
-    assert np.allclose(img, out), "clean preset should not modify the image"
-    print("PASS: clean preset leaves image unchanged")
-
-
-def test_mild_changes_image_but_stays_bounded():
-    lib = SARCorruptionLibrary()
-    img = _make_test_image()
-    out = lib.apply(img, "mild")
-    assert not np.allclose(img, out), "mild preset should change the image"
-    assert out.min() >= 0 and out.max() <= 1, "output must stay in [0, 1]"
-    print("PASS: mild preset changes image and stays in range")
-
-
-def test_severe_is_more_distorted_than_mild():
-    lib = SARCorruptionLibrary()
-    img = _make_test_image()
-    mild = lib.apply(img, "mild")
-    severe = lib.apply(img, "severe")
-    mild_diff = np.abs(img - mild).mean()
-    severe_diff = np.abs(img - severe).mean()
-    assert severe_diff > mild_diff, "severe should distort more than mild"
-    print(f"PASS: severe distortion ({severe_diff:.4f}) > mild ({mild_diff:.4f})")
-
-
-def test_unknown_preset_raises():
-    lib = SARCorruptionLibrary()
-    img = _make_test_image()
-    try:
-        lib.apply(img, "not_a_real_preset")
-        raise AssertionError("expected ValueError for unknown preset")
-    except ValueError:
-        print("PASS: unknown preset raises ValueError as expected")
+    print("All unit tests passed.")
 
 
 if __name__ == "__main__":
-    test_clean_is_unchanged()
-    test_mild_changes_image_but_stays_bounded()
-    test_severe_is_more_distorted_than_mild()
-    test_unknown_preset_raises()
-    print("\nAll corruptor.py unit tests passed.")
+    _unit_test()
