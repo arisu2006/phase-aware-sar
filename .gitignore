@@ -1,32 +1,8 @@
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-venv/
-.venv/
-
-# Jupyter
-.ipynb_checkpoints/
-
-# Data (large / raw SAR data should not be committed)
-data/*
-!data/**/
-!data/**/*.md
-!data/**/*.gitkeep
-!data/.gitkeep
-*.tif
-*.tiff
-*.h5
-*.npy
-*.npz
-
-# W&B
-wandb/
-
-# OS / editor
-.DS_Store
-.vscode/
-.idea/
-
-# Env
-.envdata/raw/*
+__pycache__/ 
+.pytest_cache/ 
+venv/ 
+wandb/ 
+*.pyc 
+.DS_Store 
+results/ 
+checkpoints/ 
